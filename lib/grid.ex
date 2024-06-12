@@ -44,6 +44,53 @@ defmodule Grid do
   end
 
   @doc """
+  Converts the grid to an Image.
+
+  The `cell_size` parameter determines the size in pixels of each cell. The default value is 10.
+
+  ## Examples
+
+      iex> Grid.new(2, 2) |> Algorithms.BinaryTree.on(bias: :southwest) |> Grid.to_img()
+  """
+  @spec to_img(Grid.t()) :: Vix.Vips.Image.t()
+  @spec to_img(Grid.t(), cell_size: pos_integer()) :: Vix.Vips.Image.t() | no_return()
+  def to_img(grid, options \\ [cell_size: 20]) do
+    cell_size = Keyword.get(options, :cell_size, 20)
+
+    width = grid.columns * cell_size
+    height = grid.rows * cell_size
+
+    background = :white
+    wall = :black
+
+    image = Image.new!(width + 1, height + 1, color: background)
+
+    grid.cells
+    |> List.flatten()
+    |> Enum.reduce(image, fn cell, image ->
+      x1 = cell.column * cell_size
+      y1 = cell.row * cell_size
+      x2 = (cell.column + 1) * cell_size
+      y2 = (cell.row + 1) * cell_size
+
+      neighbors = [
+        [{cell.row - 1, cell.column}, {x1, y1}, {x2, y1}],
+        [{cell.row, cell.column + 1}, {x2, y1}, {x2, y2}],
+        [{cell.row + 1, cell.column}, {x1, y2}, {x2, y2}],
+        [{cell.row, cell.column - 1}, {x1, y1}, {x1, y2}]
+      ]
+
+      Enum.reduce(neighbors, image, fn [position, {x1, y1}, {x2, y2}], image ->
+        unless Cell.linked?(cell, position) do
+          Image.Draw.line!(image, x1, y1, x2, y2, color: wall)
+        else
+          image
+        end
+      end)
+    end)
+  end
+
+  @doc """
   Creates a new grid with the given number of `rows` and `columns`.
 
   ## Examples
