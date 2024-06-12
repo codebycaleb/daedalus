@@ -9,12 +9,12 @@ defmodule Cell do
   defstruct [:row, :column, :links]
 
   @type t :: %__MODULE__{
-          row: pos_integer(),
-          column: pos_integer(),
-          links: MapSet.t({pos_integer(), pos_integer()})
+          row: non_neg_integer(),
+          column: non_neg_integer(),
+          links: MapSet.t({non_neg_integer(), non_neg_integer()})
         }
 
-  @type coordinates :: {pos_integer(), pos_integer()}
+  @type coordinates :: {non_neg_integer(), non_neg_integer()}
 
   @doc """
   Creates a new cell with the given `row` and `column` position, and an empty `links` MapSet.
@@ -25,7 +25,7 @@ defmodule Cell do
       %Cell{row: 1, column: 2, links: MapSet.new()}
 
   """
-  @spec new(pos_integer(), pos_integer()) :: Cell.t()
+  @spec new(non_neg_integer(), non_neg_integer()) :: Cell.t()
   def new(row, column), do: %Cell{row: row, column: column, links: MapSet.new()}
 
   @doc """
