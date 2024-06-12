@@ -58,7 +58,7 @@ defmodule Grid do
         ]
       }
   """
-  @spec new(integer(), integer()) :: Grid.t()
+  @spec new(pos_integer(), pos_integer()) :: Grid.t()
   def new(rows, columns) do
     %Grid{rows: rows, columns: columns, cells: initialize_cells(rows, columns)}
   end
@@ -71,12 +71,12 @@ defmodule Grid do
       iex> grid = Grid.new(2, 2)
       iex> Grid.exists?(grid, 0, 0)
       true
-      iex> Grid.exists?(grid, 1, 2)
+      iex> Grid.exists?(grid, 2, 2)
       false
   """
-  @spec exists?(Grid.t(), integer(), integer()) :: boolean()
+  @spec exists?(Grid.t(), non_neg_integer(), non_neg_integer()) :: boolean()
   def exists?(grid, row, column),
-    do: row >= 0 && row < grid.rows && column >= 0 && column < grid.columns
+    do: row >= 0 and row < grid.rows and column >= 0 and column < grid.columns
 
   @doc """
   Returns the cell at the given `row` and `column` position in the grid.
@@ -88,10 +88,16 @@ defmodule Grid do
       iex> grid = Grid.new(2, 2)
       iex> Grid.get(grid, 1, 1)
       %Cell{row: 1, column: 1, links: MapSet.new()}
+      iex> Grid.get(grid, -1, -1)
+      nil
       iex> Grid.get(grid, 2, 2)
       nil
   """
-  @spec get(Grid.t(), integer(), integer()) :: Cell.t() | nil
+  @spec get(Grid.t(), non_neg_integer(), non_neg_integer()) :: Cell.t() | nil
+  def get(grid, row, column)
+      when row < 0 or row >= grid.rows or column < 0 or column >= grid.columns,
+      do: nil
+
   def get(grid, row, column), do: grid.cells |> Enum.at(row, []) |> Enum.at(column)
 
   @doc """
