@@ -19,20 +19,18 @@ defmodule Grid do
           body =
             "|" <>
               Enum.reduce(row, "", fn cell, acc ->
-                if Cell.linked?(cell, {cell.row, cell.column + 1}) do
-                  acc <> "    "
-                else
-                  acc <> "   |"
+                case Cell.linked?(cell, {cell.row, cell.column + 1}) do
+                  true -> acc <> "    "
+                  false -> acc <> "   |"
                 end
               end) <> "\n"
 
           bottom =
             "+" <>
               Enum.reduce(row, "", fn cell, acc ->
-                if Cell.linked?(cell, {cell.row + 1, cell.column}) do
-                  acc <> "   +"
-                else
-                  acc <> "---+"
+                case Cell.linked?(cell, {cell.row + 1, cell.column}) do
+                  true -> acc <> "   +"
+                  false -> acc <> "---+"
                 end
               end) <> "\n"
 
