@@ -7,8 +7,20 @@ defmodule Algorithms.BinaryTreeTest do
     grid = Algorithms.BinaryTree.on(grid)
 
     assert to_string(grid) in [
-             "+---+---+\n|       |\n+---+   +\n|       |\n+---+---+\n",
-             "+---+---+\n|       |\n+   +   +\n|   |   |\n+---+---+\n"
+             ~S"""
+             +---+---+
+             |       |
+             +---+   +
+             |       |
+             +---+---+
+             """,
+             ~S"""
+             +---+---+
+             |       |
+             +   +   +
+             |   |   |
+             +---+---+
+             """
            ]
   end
 end

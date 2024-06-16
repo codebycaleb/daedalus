@@ -1,5 +1,5 @@
 defmodule Algorithms.Sidewinder do
-  @moduledoc """
+  @moduledoc ~S"""
   The `Algorithms.Sidewinder` module contains the implementation of the sidewinder algorithm for generating mazes.
 
   The TLDR of the algorithm is:
@@ -22,15 +22,14 @@ defmodule Algorithms.Sidewinder do
 
       iex> :rand.seed(:exsss, {1, 2, 3})
       iex> Grid.new(3, 3) |> Algorithms.Sidewinder.on() |> to_string()
-      to_string('''
-      +---+---+---+
+      "+---+---+---+
       |           |
       +---+   +   +
       |       |   |
       +   +---+---+
       |           |
       +---+---+---+
-      ''')
+      "
 
 
   """

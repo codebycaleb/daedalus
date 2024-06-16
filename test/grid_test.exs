@@ -7,14 +7,29 @@ defmodule GridTest do
   end
 
   test "to_string on empty grid", %{grid: grid} do
-    assert to_string(grid) == "+---+---+\n|   |   |\n+---+---+\n|   |   |\n+---+---+\n"
+    assert to_string(grid) ==
+             ~S"""
+             +---+---+
+             |   |   |
+             +---+---+
+             |   |   |
+             +---+---+
+             """
   end
 
   test "to_string on a grid with a linked pair", %{grid: grid} do
     cell1 = Grid.get(grid, 0, 0)
     cell2 = Grid.get(grid, 0, 1)
     grid = Grid.link(grid, cell1, cell2)
-    assert to_string(grid) == "+---+---+\n|       |\n+---+---+\n|   |   |\n+---+---+\n"
+
+    assert to_string(grid) ==
+             ~S"""
+             +---+---+
+             |       |
+             +---+---+
+             |   |   |
+             +---+---+
+             """
   end
 
   test "exists (positive case)", %{grid: grid} do

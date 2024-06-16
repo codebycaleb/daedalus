@@ -11,34 +11,100 @@ defmodule Grid do
 
   defimpl String.Chars, for: Grid do
     @spec to_string(Grid.t()) :: binary()
-    def to_string(grid) do
-      top = "+" <> String.duplicate("---+", grid.columns) <> "\n"
+    def to_string(grid), do: Grid.to_ascii(grid)
+  end
 
-      body =
-        Enum.reduce(grid.cells, "", fn row, acc ->
-          body =
-            "|" <>
-              Enum.reduce(row, "", fn cell, acc ->
-                case Cell.linked?(cell, {cell.row, cell.column + 1}) do
-                  true -> acc <> "    "
-                  false -> acc <> "   |"
-                end
-              end) <> "\n"
+  @doc ~S"""
+  Converts the grid to an ASCII representation (using characters from the following list: `~c"+-| "`).
 
-          bottom =
-            "+" <>
-              Enum.reduce(row, "", fn cell, acc ->
-                case Cell.linked?(cell, {cell.row + 1, cell.column}) do
-                  true -> acc <> "   +"
-                  false -> acc <> "---+"
-                end
-              end) <> "\n"
+  ## Examples
 
-          acc <> body <> bottom
+      iex> Grid.new(2, 2) |> Grid.to_ascii()
+      "+---+---+
+      |   |   |
+      +---+---+
+      |   |   |
+      +---+---+
+      "
+
+
+  """
+  @spec to_ascii(Grid.t()) :: binary()
+  def to_ascii(grid) do
+    top = "+" <> String.duplicate("---+", grid.columns) <> "\n"
+
+    body =
+      Enum.reduce(grid.cells, "", fn row, acc ->
+        body =
+          "|" <>
+            Enum.reduce(row, "", fn cell, acc ->
+              case Cell.linked?(cell, {cell.row, cell.column + 1}) do
+                true -> acc <> "    "
+                false -> acc <> "   |"
+              end
+            end) <> "\n"
+
+        bottom =
+          "+" <>
+            Enum.reduce(row, "", fn cell, acc ->
+              case Cell.linked?(cell, {cell.row + 1, cell.column}) do
+                true -> acc <> "   +"
+                false -> acc <> "---+"
+              end
+            end) <> "\n"
+
+        acc <> body <> bottom
+      end)
+
+    top <> body
+  end
+
+  @doc ~S"""
+  Converts the grid to a Unicode representation (using box-drawing characters: `~c" ╶╷┌╴─┐┬╵└│├┘┴┤┼"`).
+
+  ## Examples
+
+      iex> Grid.new(2, 2) |> Grid.to_unicode()
+      "┌┬┐
+      ├┼┤
+      └┴┘
+      "
+  """
+  @spec to_unicode(Grid.t()) :: binary()
+  def to_unicode(grid) do
+    chars = ~c" ╶╷┌╴─┐┬╵└│├┘┴┤┼"
+
+    Enum.reduce(0..grid.rows, [], fn row, output ->
+      output =
+        Enum.reduce(0..grid.columns, output, fn col, output ->
+          up_left = Grid.get(grid, row - 1, col - 1)
+          up_right = Grid.get(grid, row - 1, col)
+          down_left = Grid.get(grid, row, col - 1)
+          down_right = Grid.get(grid, row, col)
+
+          check_wall = fn cell1, cell2 ->
+            case {cell1, cell2} do
+              {nil, nil} -> 0
+              {nil, _} -> 1
+              {_, nil} -> 1
+              {cell1, cell2} -> if Cell.linked?(cell1, Cell.coordinates(cell2)), do: 0, else: 1
+            end
+          end
+
+          up_wall = check_wall.(up_left, up_right)
+          left_wall = check_wall.(up_left, down_left)
+          down_wall = check_wall.(down_left, down_right)
+          right_wall = check_wall.(up_right, down_right)
+
+          char = up_wall * 8 + left_wall * 4 + down_wall * 2 + right_wall
+
+          [Enum.at(chars, char) | output]
         end)
 
-      top <> body
-    end
+      [~c"\n" | output]
+    end)
+    |> Enum.reverse()
+    |> to_string()
   end
 
   @doc """
