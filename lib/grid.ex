@@ -65,10 +65,9 @@ defmodule Grid do
   ## Examples
 
       iex> Grid.new(2, 2) |> Grid.to_unicode()
-      "┌┬┐
-      ├┼┤
-      └┴┘
-      "
+      "┌─┬─┐ \n"<>
+      "├─┼─┤ \n"<>
+      "└─┴─┘ \n"
   """
   @spec to_unicode(Grid.t()) :: binary()
   def to_unicode(grid) do
@@ -96,9 +95,10 @@ defmodule Grid do
           down_wall = check_wall.(down_left, down_right)
           right_wall = check_wall.(up_right, down_right)
 
-          char = up_wall * 8 + left_wall * 4 + down_wall * 2 + right_wall
-
-          [Enum.at(chars, char) | output]
+          char = Enum.at(chars, up_wall * 8 + left_wall * 4 + down_wall * 2 + right_wall)
+          # ' ' or '─'
+          next_char = if right_wall == 0, do: ?\s, else: ?─
+          [next_char | [char | output]]
         end)
 
       [~c"\n" | output]
