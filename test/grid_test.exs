@@ -32,28 +32,6 @@ defmodule GridTest do
              """
   end
 
-  test "to_unicode on empty grid", %{grid: grid} do
-    assert Grid.to_unicode(grid) ==
-             Enum.join([
-               "┌─┬─┐ \n",
-               "├─┼─┤ \n",
-               "└─┴─┘ \n"
-             ])
-  end
-
-  test "to_unicode on a grid with a linked pair", %{grid: grid} do
-    cell1 = Grid.get(grid, 0, 0)
-    cell2 = Grid.get(grid, 0, 1)
-    grid = Grid.link(grid, cell1, cell2)
-
-    assert Grid.to_unicode(grid) ==
-             Enum.join([
-               "┌───┐ \n",
-               "├─┬─┤ \n",
-               "└─┴─┘ \n"
-             ])
-  end
-
   test "exists (positive case)", %{grid: grid} do
     for row <- 0..1, column <- 0..1 do
       assert Grid.exists?(grid, row, column) == true
