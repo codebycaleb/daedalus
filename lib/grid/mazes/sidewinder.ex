@@ -1,6 +1,6 @@
-defmodule Algorithms.Sidewinder do
+defmodule Grid.Mazes.Sidewinder do
   @moduledoc ~S"""
-  The `Algorithms.Sidewinder` module contains the implementation of the sidewinder algorithm for generating mazes.
+  The `Grid.Mazes.Sidewinder` module contains the implementation of the sidewinder algorithm for generating mazes.
 
   The TLDR of the algorithm is:
 
@@ -10,7 +10,7 @@ defmodule Algorithms.Sidewinder do
 
   ## Notes
 
-  Similar to `Algorithms.BinaryTree`, the sidewinder algorithm will result in a diagonal "flow" from one corner to the opposite corner.
+  Similar to `Grid.Mazes.BinaryTree`, the sidewinder algorithm will result in a diagonal "flow" from one corner to the opposite corner.
   However, mazes generated with the sidewinder algorithm will only have one long "hallway" without walls (instead of two).
 
   The `weight` option changes how long "runs" of cells are.
@@ -21,7 +21,7 @@ defmodule Algorithms.Sidewinder do
   ## Examples
 
       iex> :rand.seed(:exsss, {1, 2, 3})
-      iex> Grid.new(3, 3) |> Algorithms.Sidewinder.on() |> to_string()
+      iex> Grid.new(3, 3) |> Grid.Mazes.Sidewinder.on() |> to_string()
       "+---+---+---+
       |           |
       +---+   +   +

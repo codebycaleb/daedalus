@@ -1,10 +1,10 @@
-defmodule Algorithms.SidewinderTest do
+defmodule Grid.Mazes.BinaryTreeTest do
   use ExUnit.Case
-  doctest Algorithms.Sidewinder
+  doctest Grid.Mazes.BinaryTree
 
   test "on" do
     grid = Grid.new(2, 2)
-    grid = Algorithms.Sidewinder.on(grid)
+    grid = Grid.Mazes.BinaryTree.on(grid)
 
     assert to_string(grid) in [
              ~S"""
@@ -19,13 +19,6 @@ defmodule Algorithms.SidewinderTest do
              |       |
              +   +   +
              |   |   |
-             +---+---+
-             """,
-             ~S"""
-             +---+---+
-             |       |
-             +   +---+
-             |       |
              +---+---+
              """
            ]

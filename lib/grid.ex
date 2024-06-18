@@ -114,7 +114,7 @@ defmodule Grid do
 
   ## Examples
 
-      iex> Grid.new(2, 2) |> Algorithms.BinaryTree.on(bias: :southwest) |> Grid.to_img()
+      iex> Grid.new(2, 2) |> Grid.Mazes.Sidewinder.on(bias: :southwest) |> Grid.to_img()
   """
   @spec to_img(Grid.t()) :: Vix.Vips.Image.t()
   @spec to_img(Grid.t(), cell_size: pos_integer()) :: Vix.Vips.Image.t() | no_return()

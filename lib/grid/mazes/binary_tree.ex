@@ -1,8 +1,8 @@
-defmodule Algorithms.BinaryTree do
+defmodule Grid.Mazes.BinaryTree do
   @type bias :: :northeast | :northwest | :southeast | :southwest
 
   @moduledoc ~S"""
-  The `Algorithms.BinaryTree` module contains the implementation of the binary tree algorithm for generating mazes.
+  The `Grid.Mazes.BinaryTree` module contains the implementation of the binary tree algorithm for generating mazes.
 
   The TLDR of the algorithm is:
 
@@ -21,7 +21,7 @@ defmodule Algorithms.BinaryTree do
   ## Examples
 
       iex> :rand.seed(:exsss, {6, 9, 42})
-      iex> Grid.new(3, 3) |> Algorithms.BinaryTree.on(bias: :southwest) |> to_string()
+      iex> Grid.new(3, 3) |> Grid.Mazes.BinaryTree.on(bias: :southwest) |> to_string()
       "+---+---+---+
       |   |       |
       +   +   +---+
