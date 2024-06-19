@@ -21,14 +21,16 @@ defmodule Grid.Mazes.Sidewinder do
   ## Examples
 
       iex> :rand.seed(:exsss, {1, 2, 3})
-      iex> Grid.new(3, 3) |> Grid.Mazes.Sidewinder.on() |> to_string()
-      "+---+---+---+
-      |           |
-      +---+   +   +
-      |       |   |
-      +   +---+---+
-      |           |
-      +---+---+---+
+      iex> Grid.new(4, 4) |> Grid.Mazes.Sidewinder.on() |> to_string()
+      "+---+---+---+---+
+      |               |
+      +   +---+---+   +
+      |   |           |
+      +---+   +   +---+
+      |       |       |
+      +---+   +---+---+
+      |               |
+      +---+---+---+---+
       "
 
 
@@ -39,9 +41,9 @@ defmodule Grid.Mazes.Sidewinder do
     weight = Keyword.get(options, :weight, 0.5)
     if weight < 0 or weight > 1, do: raise(ArgumentError, "Invalid weight option")
 
-    chunk_fun = fn cell, acc ->
-      top_unavailable = not Grid.exists?(grid, cell.row - 1, cell.column)
-      east_available = Grid.exists?(grid, cell.row, cell.column + 1)
+    chunk_fun = fn {row, column} = cell, acc ->
+      top_unavailable = not Grid.exists?(grid, {row - 1, column})
+      east_available = Grid.exists?(grid, {row, column + 1})
       rand = :rand.uniform()
 
       case east_available and (top_unavailable or rand < weight) do
@@ -55,6 +57,8 @@ defmodule Grid.Mazes.Sidewinder do
     end
 
     grid.cells
+    |> Enum.sort()
+    |> Enum.chunk_every(grid.size.columns, grid.size.columns, :discard)
     |> Enum.map(&Enum.chunk_while(&1, [], chunk_fun, after_fun))
     |> Enum.reduce(grid, fn chunked_row, grid ->
       Enum.reduce(chunked_row, grid, fn run, grid ->
@@ -71,13 +75,13 @@ defmodule Grid.Mazes.Sidewinder do
           end
 
         # link north/south up to once
-        case Enum.filter(run, &Grid.exists?(grid, &1.row - 1, &1.column)) do
+        case Enum.filter(run, &Grid.exists?(grid, &1)) do
           [] ->
             grid
 
           cells_with_north ->
-            random_cell = Enum.random(cells_with_north)
-            Grid.link(grid, random_cell, Grid.get(grid, random_cell.row - 1, random_cell.column))
+            {row, column} = Enum.random(cells_with_north)
+            Grid.link(grid, {row, column}, {row - 1, column})
         end
       end)
     end)

@@ -39,15 +39,14 @@ defmodule Grid.Mazes.BinaryTree do
     if bias not in [:northeast, :northwest, :southeast, :southwest],
       do: raise(ArgumentError, "Invalid bias option")
 
-    grid.cells
-    |> List.flatten()
-    |> Enum.reduce(grid, fn cell, acc ->
-      neighbors =
-        get_options(bias)
-        |> Enum.map(fn {dx, dy} -> Grid.get(grid, cell.row + dy, cell.column + dx) end)
-        |> Enum.filter(& &1)
-
-      if neighbors != [], do: Grid.link(acc, cell, Enum.random(neighbors)), else: acc
+    Enum.reduce(grid.cells, grid, fn {row, column}, grid ->
+      get_options(bias)
+      |> Enum.map(fn {dx, dy} -> {row + dy, column + dx} end)
+      |> Enum.filter(&Grid.exists?(grid, &1))
+      |> case do
+        [] -> grid
+        neighbors -> Grid.link(grid, {row, column}, Enum.random(neighbors))
+      end
     end)
   end
 

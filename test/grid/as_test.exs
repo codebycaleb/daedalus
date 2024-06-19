@@ -16,9 +16,7 @@ defmodule Grid.AsTest do
   end
 
   test "unicode on a grid with a linked pair", %{grid: grid} do
-    cell1 = Grid.get(grid, 0, 0)
-    cell2 = Grid.get(grid, 0, 1)
-    grid = Grid.link(grid, cell1, cell2)
+    grid = Grid.link(grid, {0, 0}, {0, 1})
 
     assert Grid.As.unicode(grid) ==
              Enum.join([

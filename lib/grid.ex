@@ -1,13 +1,18 @@
 defmodule Grid do
   @moduledoc """
-  A Grid struct represents a collection of cells (stored in `:cells`) arranged in a grid of `:rows` rows and `:columns` columns.
+  A Grid struct represents a collection of cells (stored in `:cells`) arranged in a grid of `:size.rows` rows and `:size.columns` columns.
 
-  The `:cells` field is a list of lists, where each inner list represents a row of cells. Each cell is a struct of type `Cell`.
+  The `:cells` field is a list of lists, where each inner list represents a row of cells. Each cell is a tuple of the form `{row, column}`.
   """
 
-  @enforce_keys [:rows, :columns, :cells]
-  defstruct [:rows, :columns, :cells]
-  @type t :: %__MODULE__{rows: pos_integer(), columns: pos_integer(), cells: list(Cell.t())}
+  @enforce_keys [:size, :cells, :links]
+  defstruct [:size, :cells, :links]
+
+  @type t :: %__MODULE__{
+          size: %{rows: pos_integer(), columns: pos_integer()},
+          cells: MapSet.t(),
+          links: %{{non_neg_integer(), non_neg_integer()} => MapSet.t()}
+        }
 
   defimpl String.Chars, for: Grid do
     @spec to_string(Grid.t()) :: binary()
@@ -21,17 +26,21 @@ defmodule Grid do
 
       iex> Grid.new(2, 2)
       %Grid{
-        rows: 2,
-        columns: 2,
-        cells: [
-          [%Cell{row: 0, column: 0, links: MapSet.new()}, %Cell{row: 0, column: 1, links: MapSet.new()}],
-          [%Cell{row: 1, column: 0, links: MapSet.new()}, %Cell{row: 1, column: 1, links: MapSet.new()}]
-        ]
+        size: %{
+          rows: 2,
+          columns: 2
+        },
+        cells: MapSet.new([{0, 0}, {0, 1}, {1, 0}, {1, 1}]),
+        links: %{}
       }
   """
   @spec new(pos_integer(), pos_integer()) :: Grid.t()
   def new(rows, columns) do
-    %Grid{rows: rows, columns: columns, cells: initialize_cells(rows, columns)}
+    %Grid{
+      size: %{rows: rows, columns: columns},
+      cells: initialize_cells(rows, columns),
+      links: %{}
+    }
   end
 
   @doc """
@@ -40,36 +49,16 @@ defmodule Grid do
   ## Examples
 
       iex> grid = Grid.new(2, 2)
-      iex> Grid.exists?(grid, 0, 0)
+      iex> Grid.exists?(grid, {0, 0})
       true
-      iex> Grid.exists?(grid, 2, 2)
+      iex> Grid.exists?(grid, {2, 2})
       false
   """
-  @spec exists?(Grid.t(), non_neg_integer(), non_neg_integer()) :: boolean()
-  def exists?(grid, row, column),
-    do: row >= 0 and row < grid.rows and column >= 0 and column < grid.columns
-
-  @doc """
-  Returns the cell at the given `row` and `column` position in the grid.
-
-  If the cell does not exist, `nil` is returned.
-
-  ## Examples
-
-      iex> grid = Grid.new(2, 2)
-      iex> Grid.get(grid, 1, 1)
-      %Cell{row: 1, column: 1, links: MapSet.new()}
-      iex> Grid.get(grid, -1, -1)
-      nil
-      iex> Grid.get(grid, 2, 2)
-      nil
-  """
-  @spec get(Grid.t(), non_neg_integer(), non_neg_integer()) :: Cell.t() | nil
-  def get(grid, row, column)
-      when row < 0 or row >= grid.rows or column < 0 or column >= grid.columns,
-      do: nil
-
-  def get(grid, row, column), do: grid.cells |> Enum.at(row, []) |> Enum.at(column)
+  @spec exists?(Grid.t(), Cell.t()) :: boolean()
+  def exists?(grid, {row, column}),
+    do:
+      row >= 0 and row < grid.size.rows and column >= 0 and column < grid.size.columns and
+        MapSet.member?(grid.cells, {row, column})
 
   @doc """
   Links the two given cells together in the grid.
@@ -79,57 +68,54 @@ defmodule Grid do
   ## Examples
 
       iex> grid = Grid.new(1, 2)
-      iex> cell1 = Grid.get(grid, 0, 0)
-      iex> cell2 = Grid.get(grid, 0, 1)
-      iex> Grid.link(grid, cell1, cell2)
+      iex> Grid.link(grid, {0, 0}, {0, 1})
       %Grid{
-        rows: 1,
-        columns: 2,
-        cells: [
-          [%Cell{row: 0, column: 0, links: MapSet.new([{0, 1}])}, %Cell{row: 0, column: 1, links: MapSet.new([{0, 0}])}],
-        ]
-      }
-      iex> Grid.link(grid, cell1, cell2, false)
-      %Grid{
-        rows: 1,
-        columns: 2,
-        cells: [
-          [%Cell{row: 0, column: 0, links: MapSet.new([{0, 1}])}, %Cell{row: 0, column: 1, links: MapSet.new()}],
-        ]
+        size: %{rows: 1, columns: 2},
+        cells: MapSet.new([{0, 0}, {0, 1}]),
+        links: %{
+          {0, 0} => MapSet.new([{0, 1}]),
+          {0, 1} => MapSet.new([{0, 0}])
+        }
       }
   """
   @spec link(Grid.t(), Cell.t(), Cell.t()) :: Grid.t()
-  @spec link(Grid.t(), Cell.t(), Cell.t(), boolean()) :: Grid.t()
-  def link(grid, cell1, cell2, bidirectional \\ true) do
-    new_cells = grid.cells
+  def link(grid, cell1, cell2) do
+    [{cell1, cell2}, {cell2, cell1}]
+    |> Enum.reduce(grid, fn {c1, c2}, grid ->
+      map_set =
+        case grid.links[c1] do
+          nil -> MapSet.new([c2])
+          ms -> MapSet.put(ms, c2)
+        end
 
-    new_cells =
-      List.update_at(new_cells, cell1.row, fn row ->
-        List.update_at(row, cell1.column, fn cell ->
-          Cell.link(cell, cell2)
-        end)
-      end)
-
-    new_cells =
-      if bidirectional do
-        List.update_at(new_cells, cell2.row, fn row ->
-          List.update_at(row, cell2.column, fn cell ->
-            Cell.link(cell, cell1)
-          end)
-        end)
-      else
-        new_cells
-      end
-
-    %{grid | cells: new_cells}
+      %{grid | links: Map.put(grid.links, c1, map_set)}
+    end)
   end
 
-  @spec initialize_cells(integer(), integer()) :: list(Cell.t())
+  @doc """
+  Checks if the two given cells are linked in the grid.
+
+  ## Examples
+
+      iex> grid = Grid.new(1, 2)
+      iex> cell1 = {0, 0}
+      iex> cell2 = {0, 1}
+      iex> Grid.linked?(grid, cell1, cell2)
+      false
+      iex> grid |> Grid.link(cell1, cell2) |> Grid.linked?(cell1, cell2)
+      true
+
+  """
+  @spec linked?(Grid.t(), Cell.t(), Cell.t()) :: boolean()
+  def linked?(grid, cell1, cell2) do
+    case grid.links[cell1] do
+      nil -> false
+      ms -> MapSet.member?(ms, cell2)
+    end
+  end
+
+  @spec initialize_cells(integer(), integer()) :: MapSet.t()
   defp initialize_cells(rows, columns) do
-    Enum.map(0..(rows - 1), fn row ->
-      Enum.map(0..(columns - 1), fn column ->
-        Cell.new(row, column)
-      end)
-    end)
+    for row <- 0..(rows - 1), column <- 0..(columns - 1), do: {row, column}, into: MapSet.new()
   end
 end

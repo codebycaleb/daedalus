@@ -16,14 +16,17 @@ defmodule Grid.As do
   """
   @spec ascii(Grid.t()) :: binary()
   def ascii(grid) do
-    top = "+" <> String.duplicate("---+", grid.columns) <> "\n"
+    top = "+" <> String.duplicate("---+", grid.size.columns) <> "\n"
 
     body =
-      Enum.reduce(grid.cells, "", fn row, acc ->
+      grid.cells
+      |> Enum.sort()
+      |> Enum.chunk_every(grid.size.columns)
+      |> Enum.reduce("", fn row, acc ->
         body =
           "|" <>
-            Enum.reduce(row, "", fn cell, acc ->
-              case Cell.linked?(cell, {cell.row, cell.column + 1}) do
+            Enum.reduce(row, "", fn {row, column}, acc ->
+              case Grid.linked?(grid, {row, column}, {row, column + 1}) do
                 true -> acc <> "    "
                 false -> acc <> "   |"
               end
@@ -31,8 +34,8 @@ defmodule Grid.As do
 
         bottom =
           "+" <>
-            Enum.reduce(row, "", fn cell, acc ->
-              case Cell.linked?(cell, {cell.row + 1, cell.column}) do
+            Enum.reduce(row, "", fn {row, column}, acc ->
+              case Grid.linked?(grid, {row, column}, {row + 1, column}) do
                 true -> acc <> "   +"
                 false -> acc <> "---+"
               end
@@ -58,20 +61,20 @@ defmodule Grid.As do
   def unicode(grid) do
     chars = ~c" ╶╷┌╴─┐┬╵└│├┘┴┤┼"
 
-    Enum.reduce(0..grid.rows, [], fn row, output ->
+    Enum.reduce(0..grid.size.rows, [], fn row, output ->
       output =
-        Enum.reduce(0..grid.columns, output, fn col, output ->
-          up_left = Grid.get(grid, row - 1, col - 1)
-          up_right = Grid.get(grid, row - 1, col)
-          down_left = Grid.get(grid, row, col - 1)
-          down_right = Grid.get(grid, row, col)
+        Enum.reduce(0..grid.size.columns, output, fn col, output ->
+          up_left = {row - 1, col - 1}
+          up_right = {row - 1, col}
+          down_left = {row, col - 1}
+          down_right = {row, col}
 
           check_wall = fn cell1, cell2 ->
-            case {cell1, cell2} do
-              {nil, nil} -> 0
-              {nil, _} -> 1
-              {_, nil} -> 1
-              {cell1, cell2} -> if Cell.linked?(cell1, Cell.coordinates(cell2)), do: 0, else: 1
+            case {Grid.exists?(grid, cell1), Grid.exists?(grid, cell2)} do
+              {false, false} -> 0
+              {false, true} -> 1
+              {true, false} -> 1
+              {true, true} -> if Grid.linked?(grid, cell1, cell2), do: 0, else: 1
             end
           end
 
@@ -106,8 +109,8 @@ defmodule Grid.As do
   def img(grid, options \\ [cell_size: 20]) do
     cell_size = Keyword.get(options, :cell_size, 20)
 
-    width = grid.columns * cell_size
-    height = grid.rows * cell_size
+    width = grid.size.columns * cell_size
+    height = grid.size.rows * cell_size
 
     background = :white
     wall = :black
@@ -115,22 +118,21 @@ defmodule Grid.As do
     image = Image.new!(width + 1, height + 1, color: background)
 
     grid.cells
-    |> List.flatten()
-    |> Enum.reduce(image, fn cell, image ->
-      x1 = cell.column * cell_size
-      y1 = cell.row * cell_size
-      x2 = (cell.column + 1) * cell_size
-      y2 = (cell.row + 1) * cell_size
+    |> Enum.reduce(image, fn {row, column} = cell, image ->
+      x1 = column * cell_size
+      y1 = row * cell_size
+      x2 = (column + 1) * cell_size
+      y2 = (row + 1) * cell_size
 
       neighbors = [
-        [{cell.row - 1, cell.column}, {x1, y1}, {x2, y1}],
-        [{cell.row, cell.column + 1}, {x2, y1}, {x2, y2}],
-        [{cell.row + 1, cell.column}, {x1, y2}, {x2, y2}],
-        [{cell.row, cell.column - 1}, {x1, y1}, {x1, y2}]
+        [{row - 1, column}, {x1, y1}, {x2, y1}],
+        [{row, column + 1}, {x2, y1}, {x2, y2}],
+        [{row + 1, column}, {x1, y2}, {x2, y2}],
+        [{row, column - 1}, {x1, y1}, {x1, y2}]
       ]
 
       Enum.reduce(neighbors, image, fn [position, {x1, y1}, {x2, y2}], image ->
-        unless Cell.linked?(cell, position) do
+        unless Grid.linked?(grid, cell, position) do
           Image.Draw.line!(image, x1, y1, x2, y2, color: wall)
         else
           image
