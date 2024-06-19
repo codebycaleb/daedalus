@@ -42,6 +42,14 @@ defmodule GridTest do
   test "linked", %{grid: grid} do
     grid = Grid.link(grid, {0, 0}, {0, 1})
 
+    assert Grid.linked(grid, {0, 0} == MapSet.new([{0, 1}]))
+    assert Grid.linked(grid, {0, 1} == MapSet.new([{0, 0}]))
+    assert Grid.linked(grid, {1, 1} == MapSet.new())
+  end
+
+  test "linked?", %{grid: grid} do
+    grid = Grid.link(grid, {0, 0}, {0, 1})
+
     assert Grid.linked?(grid, {0, 0}, {0, 1})
     assert Grid.linked?(grid, {0, 1}, {0, 0})
     assert not Grid.linked?(grid, {0, 0}, {1, 1})

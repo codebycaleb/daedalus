@@ -117,6 +117,75 @@ defmodule Grid.As do
 
     image = Image.new!(width + 1, height + 1, color: background)
 
+    draw_image(grid, image, cell_size, wall)
+  end
+
+  @doc """
+  Converts the grid to a colorized Image.
+
+  The `cell_size` parameter determines the size in pixels of each cell. The default value is 20.
+  The `start_cell` parameter determines the starting cell. The default value is `:middle` (selects the cell in the middle row and column).
+  The `start_color` parameter determines the starting color. The default value is `:white`.
+  The `end_color` parameter determines the ending color. The default value is `:green`.
+
+  ## Examples
+
+      iex> Grid.new(2, 2) |> Grid.Mazes.Sidewinder.on(bias: :southwest) |> Grid.As.colorized_img()
+  """
+  @spec colorized_img(Grid.t()) :: Vix.Vips.Image.t()
+  def colorized_img(
+        grid,
+        options \\ [cell_size: 20, start_cell: :middle, start_color: :white, end_color: :green]
+      ) do
+    cell_size = Keyword.get(options, :cell_size, 20)
+    width = grid.size.columns * cell_size
+    height = grid.size.rows * cell_size
+
+    parse_colors = fn color ->
+      case Image.Color.rgb_color(color) do
+        {:ok, [r, g, b]} -> [r, g, b]
+        {:ok, keyword_list} -> Keyword.get(keyword_list, :rgb)
+        _ -> raise ArgumentError, "Invalid color"
+      end
+    end
+
+    background = :white
+    wall = :black
+    start_color = Keyword.get(options, :start_color, :white)
+    end_color = Keyword.get(options, :end_color, :green)
+    [sr, sg, sb] = parse_colors.(start_color)
+    [er, eg, eb] = parse_colors.(end_color)
+
+    interpolate_colors = fn intensity ->
+      [sr + (er - sr) * intensity, sg + (eg - sg) * intensity, sb + (eb - sb) * intensity]
+    end
+
+    start_cell =
+      case Keyword.get(options, :start_cell, :middle) do
+        :middle -> {div(grid.size.rows, 2), div(grid.size.columns, 2)}
+        {row, column} -> {row, column}
+      end
+
+    distances = Grid.Paths.bfs(grid, start_cell)
+    max_distance = distances |> Enum.max_by(fn {_, distance} -> distance end) |> elem(1)
+
+    image = Image.new!(width + 1, height + 1, color: background)
+
+    image =
+      Enum.reduce(grid.cells, image, fn {row, column}, image ->
+        x1 = column * cell_size
+        y1 = row * cell_size
+
+        intensity = distances[{row, column}] / max_distance
+
+        color = interpolate_colors.(intensity)
+        Image.Draw.rect!(image, x1, y1, cell_size, cell_size, color: color)
+      end)
+
+    draw_image(grid, image, cell_size, wall)
+  end
+
+  defp draw_image(grid, image, cell_size, wall) do
     grid.cells
     |> Enum.reduce(image, fn {row, column} = cell, image ->
       x1 = column * cell_size

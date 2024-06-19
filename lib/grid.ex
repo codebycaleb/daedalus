@@ -93,6 +93,21 @@ defmodule Grid do
   end
 
   @doc """
+  The set of cells linked to the given cell in the grid.
+
+  ## Examples
+
+      iex> grid = Grid.new(1, 2)
+      iex> cell = {0, 0}
+      iex> Grid.linked(grid, cell)
+      MapSet.new()
+      iex> grid |> Grid.link(cell, {0, 1}) |> Grid.linked(cell)
+      MapSet.new([{0, 1}])
+  """
+  @spec linked(Grid.t(), Cell.t()) :: MapSet.t()
+  def linked(grid, cell), do: Map.get(grid.links, cell, MapSet.new())
+
+  @doc """
   Checks if the two given cells are linked in the grid.
 
   ## Examples
@@ -112,6 +127,27 @@ defmodule Grid do
       nil -> false
       ms -> MapSet.member?(ms, cell2)
     end
+  end
+
+  @doc """
+  The set of neighboring cells (linked or otherwise) of the given cell in the grid.
+
+  ## Examples
+
+      iex> grid = Grid.new(2, 2)
+      iex> Grid.neighbors(grid, {0, 0})
+      MapSet.new([{0, 1}, {1, 0}])
+  """
+  @spec neighbors(Grid.t(), Cell.t()) :: MapSet.t()
+  def neighbors(grid, {row, column}) do
+    [
+      {row - 1, column},
+      {row, column + 1},
+      {row + 1, column},
+      {row, column - 1}
+    ]
+    |> MapSet.new()
+    |> MapSet.intersection(grid.cells)
   end
 
   @spec initialize_cells(integer(), integer()) :: MapSet.t()
