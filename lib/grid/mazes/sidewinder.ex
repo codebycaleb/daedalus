@@ -32,8 +32,6 @@ defmodule Grid.Mazes.Sidewinder do
       |               |
       +---+---+---+---+
       "
-
-
   """
   @spec on(Grid.t()) :: Grid.t()
   @spec on(Grid.t(), weight: float()) :: Grid.t()
