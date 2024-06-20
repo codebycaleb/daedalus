@@ -176,7 +176,7 @@ defmodule Grid.As do
         x1 = column * cell_size
         y1 = row * cell_size
 
-        intensity = distances[{row, column}] / max_distance
+        intensity = (distances[{row, column}] || 0) / max_distance
 
         color = interpolate_colors.(intensity)
         Image.Draw.rect!(image, x1, y1, cell_size, cell_size, color: color)
@@ -187,26 +187,26 @@ defmodule Grid.As do
 
   defp draw_image(grid, image, cell_size, wall) do
     grid.cells
-    |> Enum.reduce(image, fn {row, column} = cell, image ->
+    |> Enum.flat_map(fn {row, column} = cell ->
       x1 = column * cell_size
       y1 = row * cell_size
       x2 = (column + 1) * cell_size
       y2 = (row + 1) * cell_size
 
-      neighbors = [
-        [{row - 1, column}, {x1, y1}, {x2, y1}],
-        [{row, column + 1}, {x2, y1}, {x2, y2}],
-        [{row + 1, column}, {x1, y2}, {x2, y2}],
-        [{row, column - 1}, {x1, y1}, {x1, y2}]
+      neighbor_walls = [
+        [{row - 1, column}, [x1, y1, x2, y1]],
+        [{row, column - 1}, [x1, y1, x1, y2]],
+        [{row + 1, column}, [x1, y2, x2, y2]],
+        [{row, column + 1}, [x2, y1, x2, y2]]
       ]
 
-      Enum.reduce(neighbors, image, fn [position, {x1, y1}, {x2, y2}], image ->
-        unless Grid.linked?(grid, cell, position) do
-          Image.Draw.line!(image, x1, y1, x2, y2, color: wall)
-        else
-          image
-        end
-      end)
+      neighbor_walls
+      |> Enum.reject(fn [neighbor, _] -> Grid.linked?(grid, cell, neighbor) end)
+      |> Enum.map(fn [_, wall] -> wall end)
+    end)
+    |> Enum.uniq()
+    |> Enum.reduce(image, fn [x1, y1, x2, y2], image ->
+      Image.Draw.line!(image, x1, y1, x2, y2, color: wall)
     end)
   end
 end
