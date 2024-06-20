@@ -205,8 +205,58 @@ defmodule Grid.As do
       |> Enum.map(fn [_, wall] -> wall end)
     end)
     |> Enum.uniq()
+    |> group_lines()
     |> Enum.reduce(image, fn [x1, y1, x2, y2], image ->
       Image.Draw.line!(image, x1, y1, x2, y2, color: wall)
+    end)
+  end
+
+  defp group_lines(lines) do
+    # group horizontal lines
+    lines
+    |> Enum.group_by(fn [_x1, y1, _x2, y2] -> {y1 == y2, y1} end)
+    |> Enum.flat_map(fn
+      {{false, _}, lines} ->
+        lines
+
+      {{true, y}, lines} ->
+        # [[0, 0, 20, 0], [20, 0, 40, 0], [60, 0, 80, 0], [80, 0, 100, 0]]
+        lines
+        |> Enum.sort()
+        |> Enum.reduce([], fn [x1, _, x2, _], acc ->
+          case acc do
+            [] ->
+              [[x1, y, x2, y]]
+
+            [[last_x1, _, last_x2, _] | acc] when last_x2 == x1 ->
+              [[last_x1, y, x2, y] | acc]
+
+            _ ->
+              [[x1, y, x2, y] | acc]
+          end
+        end)
+    end)
+    # group vertical lines
+    |> Enum.group_by(fn [x1, _y1, x2, _y2] -> {x1 == x2, x1} end)
+    |> Enum.flat_map(fn
+      {{false, _}, lines} ->
+        lines
+
+      {{true, x}, lines} ->
+        lines
+        |> Enum.sort()
+        |> Enum.reduce([], fn [_, y1, _, y2], acc ->
+          case acc do
+            [] ->
+              [[x, y1, x, y2]]
+
+            [[_, last_y1, _, last_y2] | acc] when last_y2 == y1 ->
+              [[x, last_y1, x, y2] | acc]
+
+            _ ->
+              [[x, y1, x, y2] | acc]
+          end
+        end)
     end)
   end
 end
