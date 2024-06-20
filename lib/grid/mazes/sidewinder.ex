@@ -58,7 +58,7 @@ defmodule Grid.Mazes.Sidewinder do
 
     grid.cells
     |> Enum.sort()
-    |> Enum.chunk_every(grid.size.columns, grid.size.columns, :discard)
+    |> Enum.chunk_by(fn {row, _} -> row end)
     |> Enum.map(&Enum.chunk_while(&1, [], chunk_fun, after_fun))
     |> Enum.reduce(grid, fn chunked_row, grid ->
       Enum.reduce(chunked_row, grid, fn run, grid ->
@@ -75,7 +75,7 @@ defmodule Grid.Mazes.Sidewinder do
           end
 
         # link north/south up to once
-        case Enum.filter(run, &Grid.exists?(grid, &1)) do
+        case Enum.filter(run, fn {row, column} -> Grid.exists?(grid, {row - 1, column}) end) do
           [] ->
             grid
 
