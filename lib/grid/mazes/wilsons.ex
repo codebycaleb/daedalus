@@ -9,31 +9,33 @@ defmodule Grid.Mazes.Wilsons do
   Pick a random cell. Remove it from the unvisited set.
   - Until unvisited is empty:
     - Pick a random unvisted cell. This is the first cell in our path.
-      - Get the list of neighbors from the current cell, excluding neighbors that exist in our current path.
-      - If the list of neighbors is empty:
-        - Restart the path from the first cell in our path.
-      - Otherwise:
-        - Pick a random neighbor from the list of neighbors.
-        - If the random neighbor is unvisited:
-          - Add the random neighbor to our path and continue.
-        - If the random neighbor is a visited cell:
-          - "Carve" our path from the initial random unvisited cell to the visited cell, linking all cells in the path together.
-          - Pick a new random unvisited cell and start a new path.
+    - Get the list of neighbors from the current cell, excluding the most recent cell in our path (i.e. the direction this cell came from).
+    - If the list of neighbors is empty:
+      - Pick a new random unvisited cell and start a new path.
+    - Otherwise:
+      - Pick a random neighbor from the list of neighbors.
+      - If the random neighbor is part of our path:
+        - Pick a new random unvisited cell and start a new path.
+      - If the random neighbor is unvisited:
+        - Add the random neighbor to our path and continue.
+      - If the random neighbor is a visited cell:
+        - "Carve" our path from the initial random unvisited cell to the visited cell, linking all cells in the path together.
+        - Pick a new random unvisited cell and start a new path.
 
   ## Examples
 
-      iex> :rand.seed(:exsss, {100, 87, 13})
+      iex> :rand.seed(:exsss, {1, 2, 3})
       iex> Grid.new(5, 5) |> Grid.Mazes.Wilsons.on() |> to_string()
       "+---+---+---+---+---+
+      |       |   |       |
+      +   +---+   +   +---+
+      |                   |
+      +---+   +   +   +---+
+      |       |   |   |   |
+      +---+   +---+   +   +
       |           |       |
-      +   +---+   +   +   +
-      |   |       |   |   |
-      +   +   +   +   +   +
-      |   |   |       |   |
-      +   +---+---+   +---+
-      |   |   |           |
-      +   +   +   +---+---+
-      |   |               |
+      +   +---+   +---+   +
+      |       |       |   |
       +---+---+---+---+---+
       "
 
@@ -45,24 +47,30 @@ defmodule Grid.Mazes.Wilsons do
   end
 
   defp wilson(grid, unvisited, path, cell) do
+    [most_recent | _] = path
+
     neighbors =
       grid
       |> Grid.neighbors(cell)
-      |> Enum.reject(&(&1 in path))
+      |> Enum.reject(&(&1 == most_recent))
 
     case neighbors do
       [] ->
-        initial = List.last(path)
-        wilson(grid, unvisited, [initial], initial)
+        random_unvisited = Enum.random(unvisited)
+        wilson(grid, unvisited, [random_unvisited], random_unvisited)
 
       _ ->
         neighbor = Enum.random(neighbors)
 
-        case MapSet.member?(unvisited, neighbor) do
-          true ->
+        cond do
+          neighbor in path ->
+            random_unvisited = Enum.random(unvisited)
+            wilson(grid, unvisited, [random_unvisited], random_unvisited)
+
+          MapSet.member?(unvisited, neighbor) ->
             wilson(grid, unvisited, [neighbor | path], neighbor)
 
-          false ->
+          true ->
             grid = carve(grid, [neighbor | path])
             unvisited = MapSet.difference(unvisited, MapSet.new([neighbor | path]))
 
