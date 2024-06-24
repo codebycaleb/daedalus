@@ -113,11 +113,11 @@ defmodule Grid.As do
     height = grid.size.rows * cell_size
 
     background = :white
-    wall = :black
+    wall_color = :black
 
     image = Image.new!(width + 1, height + 1, color: background)
 
-    draw_image(grid, image, cell_size, wall)
+    draw_image(grid, image, cell_size, wall_color)
   end
 
   @doc """
@@ -135,7 +135,13 @@ defmodule Grid.As do
   @spec colorized_img(Grid.t()) :: Vix.Vips.Image.t()
   def colorized_img(
         grid,
-        options \\ [cell_size: 20, start_cell: :middle, start_color: :white, end_color: :green]
+        options \\ [
+          cell_size: 20,
+          start_cell: :middle,
+          start_color: :white,
+          end_color: :green,
+          wall_color: :black
+        ]
       ) do
     cell_size = Keyword.get(options, :cell_size, 20)
     width = grid.size.columns * cell_size
@@ -150,7 +156,7 @@ defmodule Grid.As do
     end
 
     background = :white
-    wall = :black
+    wall_color = Keyword.get(options, :wall_color, :black)
     start_color = Keyword.get(options, :start_color, :white)
     end_color = Keyword.get(options, :end_color, :green)
     [sr, sg, sb] = parse_colors.(start_color)
@@ -182,10 +188,10 @@ defmodule Grid.As do
         Image.Draw.rect!(image, x1, y1, cell_size, cell_size, color: color)
       end)
 
-    draw_image(grid, image, cell_size, wall)
+    draw_image(grid, image, cell_size, wall_color)
   end
 
-  defp draw_image(grid, image, cell_size, wall) do
+  defp draw_image(grid, image, cell_size, wall_color) do
     grid.cells
     |> Enum.flat_map(fn {row, column} = cell ->
       x1 = column * cell_size
@@ -207,7 +213,7 @@ defmodule Grid.As do
     |> Enum.uniq()
     |> group_lines()
     |> Enum.reduce(image, fn [x1, y1, x2, y2], image ->
-      Image.Draw.line!(image, x1, y1, x2, y2, color: wall)
+      Image.Draw.line!(image, x1, y1, x2, y2, color: wall_color)
     end)
   end
 
