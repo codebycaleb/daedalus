@@ -1,4 +1,16 @@
 defmodule Grid.As do
+  @type coordinate ::
+          :top_left
+          | :top_middle
+          | :top_right
+          | :middle_left
+          | :middle
+          | :middle_right
+          | :bottom_left
+          | :bottom_middle
+          | :bottom_right
+          | {non_neg_integer(), non_neg_integer()}
+
   @doc ~S"""
   Converts the grid to an ASCII representation (using characters from the following list: `~c"+-| "`).
 
@@ -104,7 +116,7 @@ defmodule Grid.As do
 
       iex> Grid.new(2, 2) |> Grid.Mazes.Sidewinder.on(bias: :southwest) |> Grid.As.img()
   """
-  @spec img(Grid.t()) :: Vix.Vips.Image.t()
+  @spec img(Grid.t()) :: Vix.Vips.Image.t() | no_return()
   @spec img(Grid.t(), cell_size: pos_integer()) :: Vix.Vips.Image.t() | no_return()
   def img(grid, options \\ [cell_size: 20]) do
     cell_size = Keyword.get(options, :cell_size, 20)
@@ -123,16 +135,25 @@ defmodule Grid.As do
   @doc """
   Converts the grid to a colorized Image.
 
-  The `cell_size` parameter determines the size in pixels of each cell. The default value is 20.
-  The `start_cell` parameter determines the starting cell. The default value is `:middle` (selects the cell in the middle row and column).
-  The `start_color` parameter determines the starting color. The default value is `:white`.
-  The `end_color` parameter determines the ending color. The default value is `:green`.
+  ## Options
+
+  - The `cell_size` parameter determines the size in pixels of each cell. The default value is 20.
+  - The `start_cell` parameter determines the starting cell. The default value is `:middle` (selects the cell in the middle row and column).
+  - The `start_color` parameter determines the starting color. The default value is `:white`.
+  - The `end_color` parameter determines the ending color. The default value is `:green`.
 
   ## Examples
 
       iex> Grid.new(2, 2) |> Grid.Mazes.Sidewinder.on(bias: :southwest) |> Grid.As.colorized_img()
   """
   @spec colorized_img(Grid.t()) :: Vix.Vips.Image.t()
+  @spec colorized_img(Grid.t(),
+          cell_size: pos_integer(),
+          start_cell: coordinate(),
+          start_color: Image.Color.t(),
+          end_color: Image.Color.t(),
+          wall_color: Image.Color.t()
+        ) :: Vix.Vips.Image.t()
   def colorized_img(
         grid,
         options \\ [
@@ -143,6 +164,96 @@ defmodule Grid.As do
           wall_color: :black
         ]
       ) do
+    start_cell = parse_cell(grid, Keyword.get(options, :start_cell, :middle))
+    distances = Grid.Paths.bfs(grid, start_cell)
+    draw_image_with_distances_map(grid, distances, options)
+  end
+
+  @doc """
+  Converts the grid to an Image with the solution path.
+
+  ## Options
+
+  - The `cell_size` parameter determines the size in pixels of each cell. The default value is 20.
+  - The `start_cell` parameter determines the starting cell. The default value is `:top_left`.
+  - The `end_cell` parameter determines the ending cell. The default value is `:bottom_right`.
+  - The `start_color` and `end_color` parameters determine the starting and ending colors. The default value is `:green`.
+    - NOTE: If only one of the colors is provided, the other will be set to the same color.
+  - The `wall_color` parameter determines the color of the walls. The default value is `:black`.
+
+  ## Examples
+
+      iex> Grid.new(2, 2) |> Grid.Mazes.Sidewinder.on(bias: :southwest) |> Grid.As.solution_img()
+
+  """
+  @spec solution_img(Grid.t()) :: Vix.Vips.Image.t() | no_return()
+  @spec solution_img(Grid.t(),
+          cell_size: pos_integer(),
+          start_cell: coordinate(),
+          end_cell: coordinate(),
+          start_color: Image.Color.t(),
+          end_color: Image.Color.t(),
+          wall_color: Image.Color.t()
+        ) :: Vix.Vips.Image.t() | no_return()
+  def solution_img(
+        grid,
+        options \\ [
+          cell_size: 20,
+          start_cell: :top_left,
+          end_cell: :bottom_right,
+          start_color: :green,
+          end_color: :green,
+          wall_color: :black
+        ]
+      ) do
+    start_color = Keyword.get(options, :start_color)
+    end_color = Keyword.get(options, :end_color)
+
+    options =
+      case {start_color, end_color} do
+        {nil, nil} ->
+          options |> Keyword.put(:start_color, :green) |> Keyword.put(:end_color, :green)
+
+        {nil, end_color} ->
+          options |> Keyword.put(:start_color, end_color)
+
+        {start_color, nil} ->
+          options |> Keyword.put(:end_color, start_color)
+
+        _ ->
+          options
+      end
+
+    start_cell = parse_cell(grid, Keyword.get(options, :start_cell, :top_left))
+    end_cell = parse_cell(grid, Keyword.get(options, :end_cell, :bottom_right))
+
+    distances =
+      Grid.Paths.shortest_path(grid, start_cell, end_cell)
+      |> Enum.with_index()
+      |> Map.new()
+
+    draw_image_with_distances_map(grid, distances, options)
+  end
+
+  defp parse_cell(grid, cell_option) do
+    mid_column = div(grid.size.columns - 1, 2)
+    mid_row = div(grid.size.rows - 1, 2)
+
+    case cell_option do
+      :top_left -> {0, 0}
+      :top_middle -> {0, div(grid.size.columns - 1, 2)}
+      :top_right -> {0, grid.size.columns - 1}
+      :middle_left -> {div(grid.size.rows - 1, 2), 0}
+      :middle -> {mid_row, mid_column}
+      :middle_right -> {mid_row, grid.size.columns - 1}
+      :bottom_left -> {grid.size.rows - 1, 0}
+      :bottom_middle -> {grid.size.rows - 1, mid_column}
+      :bottom_right -> {grid.size.rows - 1, grid.size.columns - 1}
+      {row, column} -> {row, column}
+    end
+  end
+
+  defp draw_image_with_distances_map(grid, distances, options) do
     cell_size = Keyword.get(options, :cell_size, 20)
     width = grid.size.columns * cell_size
     height = grid.size.rows * cell_size
@@ -166,13 +277,6 @@ defmodule Grid.As do
       [sr + (er - sr) * intensity, sg + (eg - sg) * intensity, sb + (eb - sb) * intensity]
     end
 
-    start_cell =
-      case Keyword.get(options, :start_cell, :middle) do
-        :middle -> {div(grid.size.rows, 2), div(grid.size.columns, 2)}
-        {row, column} -> {row, column}
-      end
-
-    distances = Grid.Paths.bfs(grid, start_cell)
     max_distance = distances |> Enum.max_by(fn {_, distance} -> distance end) |> elem(1)
 
     image = Image.new!(width + 1, height + 1, color: background)
@@ -182,10 +286,15 @@ defmodule Grid.As do
         x1 = column * cell_size
         y1 = row * cell_size
 
-        intensity = (distances[{row, column}] || 0) / max_distance
+        case distances[{row, column}] do
+          nil ->
+            image
 
-        color = interpolate_colors.(intensity)
-        Image.Draw.rect!(image, x1, y1, cell_size, cell_size, color: color)
+          distance ->
+            intensity = distance / max_distance
+            color = interpolate_colors.(intensity)
+            Image.Draw.rect!(image, x1, y1, cell_size, cell_size, color: color)
+        end
       end)
 
     draw_image(grid, image, cell_size, wall_color)
