@@ -7,28 +7,28 @@ defmodule Grid.Mazes.WilsonsTest do
     grid = Grid.Mazes.Wilsons.on(grid)
 
     assert to_string(grid) in [
-             ~S"""
+             """
              +---+---+
              |   |   |
              +   +   +
              |       |
              +---+---+
              """,
-             ~S"""
+             """
              +---+---+
              |       |
              +   +---+
              |       |
              +---+---+
              """,
-             ~S"""
+             """
              +---+---+
              |       |
              +   +   +
              |   |   |
              +---+---+
              """,
-             ~S"""
+             """
              +---+---+
              |       |
              +---+   +

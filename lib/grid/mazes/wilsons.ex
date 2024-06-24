@@ -1,5 +1,5 @@
 defmodule Grid.Mazes.Wilsons do
-  @moduledoc ~S"""
+  @moduledoc """
   The `Grid.Mazes.Wilsons` module contains the implementation of Wilson's algorithm for generating mazes.
 
   The TLDR of the algorithm is:

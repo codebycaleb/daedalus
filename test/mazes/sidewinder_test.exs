@@ -7,21 +7,21 @@ defmodule Grid.Mazes.SidewinderTest do
     grid = Grid.Mazes.Sidewinder.on(grid)
 
     assert to_string(grid) in [
-             ~S"""
+             """
              +---+---+
              |       |
              +---+   +
              |       |
              +---+---+
              """,
-             ~S"""
+             """
              +---+---+
              |       |
              +   +   +
              |   |   |
              +---+---+
              """,
-             ~S"""
+             """
              +---+---+
              |       |
              +   +---+

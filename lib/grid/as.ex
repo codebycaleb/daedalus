@@ -11,7 +11,7 @@ defmodule Grid.As do
           | :bottom_right
           | {non_neg_integer(), non_neg_integer()}
 
-  @doc ~S"""
+  @doc """
   Converts the grid to an ASCII representation (using characters from the following list: `~c"+-| "`).
 
   ## Examples

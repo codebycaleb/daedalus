@@ -1,5 +1,5 @@
 defmodule Grid.Mazes.Sidewinder do
-  @moduledoc ~S"""
+  @moduledoc """
   The `Grid.Mazes.Sidewinder` module contains the implementation of the sidewinder algorithm for generating mazes.
 
   The TLDR of the algorithm is:

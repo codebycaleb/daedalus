@@ -1,7 +1,7 @@
 defmodule Grid.Mazes.BinaryTree do
   @type bias :: :northeast | :northwest | :southeast | :southwest
 
-  @moduledoc ~S"""
+  @moduledoc """
   The `Grid.Mazes.BinaryTree` module contains the implementation of the binary tree algorithm for generating mazes.
 
   The TLDR of the algorithm is:

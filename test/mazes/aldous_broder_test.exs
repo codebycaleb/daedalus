@@ -7,28 +7,28 @@ defmodule Grid.Mazes.AldousBroderTest do
     grid = Grid.Mazes.AldousBroder.on(grid)
 
     assert to_string(grid) in [
-             ~S"""
+             """
              +---+---+
              |   |   |
              +   +   +
              |       |
              +---+---+
              """,
-             ~S"""
+             """
              +---+---+
              |       |
              +   +---+
              |       |
              +---+---+
              """,
-             ~S"""
+             """
              +---+---+
              |       |
              +   +   +
              |   |   |
              +---+---+
              """,
-             ~S"""
+             """
              +---+---+
              |       |
              +---+   +

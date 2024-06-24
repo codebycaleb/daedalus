@@ -1,5 +1,5 @@
 defmodule Grid.Mazes.AldousBroder do
-  @moduledoc ~S"""
+  @moduledoc """
   The `Grid.Mazes.AldousBroder` module contains the implementation of the Aldous-Broder algorithm for generating mazes.
 
   The TLDR of the algorithm is:

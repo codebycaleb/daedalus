@@ -7,14 +7,14 @@ defmodule Grid.Mazes.BinaryTreeTest do
     grid = Grid.Mazes.BinaryTree.on(grid)
 
     assert to_string(grid) in [
-             ~S"""
+             """
              +---+---+
              |       |
              +---+   +
              |       |
              +---+---+
              """,
-             ~S"""
+             """
              +---+---+
              |       |
              +   +   +
