@@ -44,6 +44,37 @@ defmodule Grid do
   end
 
   @doc """
+  Creates a new grid with the given `cells`.
+
+  ## Examples
+
+      iex> Grid.new(MapSet.new([{0, 0}, {0, 1}, {1, 0}, {1, 1}]))
+      %Grid{
+        size: %{
+          rows: 2,
+          columns: 2
+        },
+        cells: MapSet.new([{0, 0}, {0, 1}, {1, 0}, {1, 1}]),
+        links: %{}
+      }
+  """
+  @spec new(MapSet.t()) :: Grid.t()
+  def new(cells) do
+    {rows, columns} =
+      cells
+      |> MapSet.to_list()
+      |> Enum.reduce({0, 0}, fn {row, column}, {max_row, max_column} ->
+        {max(max_row, row + 1), max(max_column, column + 1)}
+      end)
+
+    %Grid{
+      size: %{rows: rows, columns: columns},
+      cells: cells,
+      links: %{}
+    }
+  end
+
+  @doc """
   Checks if a cell at the given `row` and `column` position exists in the grid.
 
   ## Examples
