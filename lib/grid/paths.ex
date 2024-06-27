@@ -1,13 +1,12 @@
 defmodule Grid.Paths do
-  defp bfs(_grid, _goal, [], distances), do: distances
-  defp bfs(_grid, goal, [goal | _], distances), do: distances
+  defp bfs(_func, _grid, [], distances), do: distances
 
-  defp bfs(grid, goal, [current | frontier], distances) do
+  defp bfs(func, grid, [current | frontier], distances) do
     current_distance = Map.get(distances, current)
 
     new_frontier =
       grid
-      |> Grid.linked(current)
+      |> func.(current)
       |> Enum.reject(&Map.has_key?(distances, &1))
 
     new_distances =
@@ -18,41 +17,38 @@ defmodule Grid.Paths do
         end
       end)
 
-    bfs(grid, goal, frontier ++ new_frontier, new_distances)
+    bfs(func, grid, frontier ++ new_frontier, new_distances)
   end
 
   @doc """
-  Breadth-first search from the given cell in the grid to _all_ other cells.
+  Breadth-first search from the given cell in the grid to the linked goal cell (or all linked cells, if `goal` is `nil`). Exits early when the goal cell is reached.
 
   ## Examples
 
       iex> grid = Grid.new(2, 2)
-      iex> Grid.Paths.bfs(grid, {0, 0})
+      iex> Grid.Paths.linked_bfs(grid, {0, 0})
       %{{0, 0} => 0}
-      iex> grid |> Grid.link({0, 0}, {1, 0}) |> Grid.link({0, 0}, {0, 1}) |> Grid.link({0, 1}, {1, 1}) |> Grid.Paths.bfs({0, 0})
+      iex> grid |> Grid.link({0, 0}, {1, 0}) |> Grid.link({0, 0}, {0, 1}) |> Grid.link({0, 1}, {1, 1}) |> Grid.Paths.linked_bfs({0, 0})
       %{{0, 0} => 0, {0, 1} => 1, {1, 0} => 1, {1, 1} => 2}
-      iex> grid |> Grid.link({0, 0}, {1, 0}) |> Grid.link({1, 0}, {1, 1}) |> Grid.link({1, 1}, {0, 1}) |> Grid.Paths.bfs({0, 0})
+      iex> grid |> Grid.link({0, 0}, {1, 0}) |> Grid.link({1, 0}, {1, 1}) |> Grid.link({1, 1}, {0, 1}) |> Grid.Paths.linked_bfs({0, 0})
       %{{0, 0} => 0, {0, 1} => 3, {1, 0} => 1, {1, 1} => 2}
   """
-  @spec bfs(Grid.t(), Cell.t()) :: map()
-  def bfs(grid, cell), do: bfs(grid, nil, [cell], %{cell => 0})
+  @spec linked_bfs(Grid.t(), Cell.t()) :: map()
+  def linked_bfs(grid, cell),
+    do: bfs(&Grid.linked/2, grid, [cell], %{cell => 0})
 
   @doc """
-  Breadth-first search from the given cell in the grid to the goal cell. Exits early when the goal cell is reached.
+  Breadth-first search from the given cell in the grid to the neighboring goal cell (or all neighboring cells, if `goal` is `nil`). Exits early when the goal cell is reached.
 
   ## Examples
 
       iex> grid = Grid.new(2, 2)
-      iex> Grid.Paths.bfs(grid, {0, 0}, {1, 1})
-      %{{0, 0} => 0}
-      iex> grid |> Grid.link({0, 0}, {1, 0}) |> Grid.link({0, 0}, {0, 1}) |> Grid.link({0, 1}, {1, 1}) |> Grid.Paths.bfs({0, 0}, {0, 1})
-      %{{0, 0} => 0, {0, 1} => 1, {1, 0} => 1}
-      iex> grid |> Grid.link({0, 0}, {1, 0}) |> Grid.link({1, 0}, {1, 1}) |> Grid.link({1, 1}, {0, 1}) |> Grid.Paths.bfs({0, 0}, {0, 1})
-      %{{0, 0} => 0, {0, 1} => 3, {1, 0} => 1, {1, 1} => 2}
-
+      iex> Grid.Paths.neighbor_bfs(grid, {0, 0})
+      %{{0, 0} => 0, {1, 0} => 1, {0, 1} => 1, {1, 1} => 2}
   """
-  @spec bfs(Grid.t(), Cell.t(), Cell.t()) :: map()
-  def bfs(grid, cell, goal), do: bfs(grid, goal, [cell], %{cell => 0})
+  @spec neighbor_bfs(Grid.t(), Cell.t()) :: map()
+  def neighbor_bfs(grid, cell),
+    do: bfs(&Grid.neighbors/2, grid, [cell], %{cell => 0})
 
   defp shortest_path(grid, distances, current, start, path) do
     if current == start do
@@ -82,7 +78,7 @@ defmodule Grid.Paths do
   """
   @spec shortest_path(Grid.t(), Cell.t(), Cell.t()) :: list()
   def shortest_path(grid, start, goal) do
-    distances = bfs(grid, goal, [start], %{start => 0})
+    distances = bfs(&Grid.linked/2, grid, [start], %{start => 0})
 
     case Map.get(distances, goal) do
       nil -> nil

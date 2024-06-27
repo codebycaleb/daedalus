@@ -165,7 +165,7 @@ defmodule Grid.As do
         ]
       ) do
     start_cell = parse_cell(grid, Keyword.get(options, :start_cell, :middle))
-    distances = Grid.Paths.bfs(grid, start_cell)
+    distances = Grid.Paths.linked_bfs(grid, start_cell)
     draw_image_with_distances_map(grid, distances, options)
   end
 

@@ -3,12 +3,12 @@ defmodule Grid.PathsTest do
   doctest Grid.Paths
 
   setup do
-    %{grid: Grid.new(2, 2)}
+    %{grid: Grid.new(3, 3)}
   end
 
-  test "bfs", %{grid: grid} do
+  test "linked_bfs", %{grid: grid} do
     # exits when all cells are visited (this grid isn't connected!)
-    assert Grid.Paths.bfs(grid, {0, 0}, {0, 1}) == %{{0, 0} => 0}
+    assert Grid.Paths.linked_bfs(grid, {0, 0}) == %{{0, 0} => 0}
 
     grid =
       grid
@@ -17,6 +17,25 @@ defmodule Grid.PathsTest do
       |> Grid.link({1, 1}, {1, 0})
       |> Grid.link({1, 0}, {0, 0})
 
-    assert Grid.Paths.bfs(grid, {0, 0}) == %{{0, 0} => 0, {0, 1} => 1, {1, 0} => 1, {1, 1} => 2}
+    assert Grid.Paths.linked_bfs(grid, {0, 0}) == %{
+             {0, 0} => 0,
+             {0, 1} => 1,
+             {1, 0} => 1,
+             {1, 1} => 2
+           }
+  end
+
+  test "neighbor_bfs", %{grid: grid} do
+    assert Grid.Paths.neighbor_bfs(grid, {0, 0}) == %{
+             {0, 0} => 0,
+             {0, 1} => 1,
+             {0, 2} => 2,
+             {1, 0} => 1,
+             {1, 1} => 2,
+             {1, 2} => 3,
+             {2, 0} => 2,
+             {2, 1} => 3,
+             {2, 2} => 4
+           }
   end
 end

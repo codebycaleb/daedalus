@@ -1,5 +1,5 @@
 defmodule Grid.Mazes.RecursiveBacktracker do
-  @moduledoc """
+  @moduledoc ~S"""
   The `Grid.Mazes.RecursiveBacktracker` module contains the implementation of the Recursive Backtracker algorithm for generating mazes.
 
   The TLDR of the algorithm is:
@@ -10,25 +10,29 @@ defmodule Grid.Mazes.RecursiveBacktracker do
 
   ## Examples
 
-      iex> :rand.seed(:exsss, {1, 2, 4})
+      iex> :rand.seed(:exsss, {1, 2, 3})
       iex> Grid.new(5, 5) |> Grid.Mazes.RecursiveBacktracker.on() |> to_string()
       "+---+---+---+---+---+
-      |   |       |       |
-      +   +   +   +---+   +
-      |   |   |   |       |
-      +   +   +---+   +   +
-      |   |       |   |   |
-      +   +---+   +   +   +
-      |       |   |   |   |
-      +   +---+   +   +   +
-      |               |   |
+      |   |               |
+      +   +   +---+---+   +
+      |   |           |   |
+      +   +---+   +---+   +
+      |           |       |
+      +---+---+---+   +   +
+      |       |       |   |
+      +---+   +   +---+   +
+      |           |       |
       +---+---+---+---+---+
       "
   """
   @spec on(Grid.t()) :: Grid.t()
   def on(grid) do
-    current = Enum.random(grid.cells)
-    recurse(grid, current)
+    grid
+    |> Grid.Utils.islands()
+    |> Enum.reduce(grid, fn island, grid ->
+      current = Enum.random(island)
+      recurse(grid, current)
+    end)
   end
 
   defp recurse(grid, current) do
