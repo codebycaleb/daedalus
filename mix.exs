@@ -21,7 +21,7 @@ defmodule Daedalus.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:image, "~> 0.37"}
+      {:image, "~> 0.52"}
     ]
   end
 end
